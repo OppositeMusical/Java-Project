@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.taskmanager.auth.AppUserRepository;
 import com.example.taskmanager.common.NotFoundException;
 import com.example.taskmanager.project.ProjectDtos.ProjectRequest;
 import com.example.taskmanager.project.ProjectDtos.ProjectResponse;
@@ -17,43 +18,47 @@ public class ProjectService {
 
     private final ProjectRepository projects;
     private final TaskRepository tasks;
+    private final AppUserRepository users;
 
-    public ProjectService(ProjectRepository projects, TaskRepository tasks) {
+    public ProjectService(ProjectRepository projects, TaskRepository tasks, AppUserRepository users) {
         this.projects = projects;
         this.tasks = tasks;
+        this.users = users;
     }
 
     @Transactional(readOnly = true)
-    public List<ProjectResponse> findAll() {
-        return projects.findAllByOrderByNameAsc().stream().map(this::toResponse).toList();
+    public List<ProjectResponse> findAll(Long ownerId) {
+        return projects.findAllByOwnerIdOrderByNameAsc(ownerId).stream().map(this::toResponse).toList();
     }
 
     @Transactional(readOnly = true)
-    public ProjectResponse findById(Long id) {
-        return toResponse(getEntity(id));
+    public ProjectResponse findById(Long id, Long ownerId) {
+        return toResponse(getEntity(id, ownerId));
     }
 
-    public ProjectResponse create(ProjectRequest request) {
-        Project project = projects.save(new Project(request.name().strip(), request.description()));
+    public ProjectResponse create(ProjectRequest request, Long ownerId) {
+        Project project = projects.save(
+                new Project(users.getReferenceById(ownerId), request.name().strip(), request.description()));
         return toResponse(project);
     }
 
-    public ProjectResponse update(Long id, ProjectRequest request) {
-        Project project = getEntity(id);
+    public ProjectResponse update(Long id, ProjectRequest request, Long ownerId) {
+        Project project = getEntity(id, ownerId);
         project.setName(request.name().strip());
         project.setDescription(request.description());
         return toResponse(project);
     }
 
-    public void delete(Long id) {
-        Project project = getEntity(id);
+    public void delete(Long id, Long ownerId) {
+        Project project = getEntity(id, ownerId);
         tasks.deleteByProjectId(project.getId());
         projects.deleteById(project.getId());
     }
 
+    /** Other users' projects are reported as not found, so their ids don't leak. */
     @Transactional(readOnly = true)
-    public Project getEntity(Long id) {
-        return projects.findById(id).orElseThrow(() -> new NotFoundException("Project", id));
+    public Project getEntity(Long id, Long ownerId) {
+        return projects.findByIdAndOwnerId(id, ownerId).orElseThrow(() -> new NotFoundException("Project", id));
     }
 
     private ProjectResponse toResponse(Project project) {

@@ -23,43 +23,43 @@ public class TaskService {
     }
 
     @Transactional(readOnly = true)
-    public List<TaskResponse> search(Long projectId, TaskStatus status) {
-        return tasks.search(projectId, status).stream().map(TaskResponse::from).toList();
+    public List<TaskResponse> search(Long ownerId, Long projectId, TaskStatus status) {
+        return tasks.search(ownerId, projectId, status).stream().map(TaskResponse::from).toList();
     }
 
     @Transactional(readOnly = true)
-    public TaskResponse findById(Long id) {
-        return TaskResponse.from(getEntity(id));
+    public TaskResponse findById(Long id, Long ownerId) {
+        return TaskResponse.from(getEntity(id, ownerId));
     }
 
-    public TaskResponse create(TaskRequest request) {
-        Task task = new Task(projects.getEntity(request.projectId()), request.title().strip());
+    public TaskResponse create(TaskRequest request, Long ownerId) {
+        Task task = new Task(projects.getEntity(request.projectId(), ownerId), request.title().strip());
         apply(task, request);
         return TaskResponse.from(tasks.saveAndFlush(task));
     }
 
-    public TaskResponse update(Long id, TaskRequest request) {
-        Task task = getEntity(id);
+    public TaskResponse update(Long id, TaskRequest request, Long ownerId) {
+        Task task = getEntity(id, ownerId);
         task.setTitle(request.title().strip());
         if (!task.getProject().getId().equals(request.projectId())) {
-            task.setProject(projects.getEntity(request.projectId()));
+            task.setProject(projects.getEntity(request.projectId(), ownerId));
         }
         apply(task, request);
         return TaskResponse.from(tasks.saveAndFlush(task));
     }
 
-    public TaskResponse updateStatus(Long id, TaskStatus status) {
-        Task task = getEntity(id);
+    public TaskResponse updateStatus(Long id, TaskStatus status, Long ownerId) {
+        Task task = getEntity(id, ownerId);
         task.setStatus(status);
         return TaskResponse.from(tasks.saveAndFlush(task));
     }
 
-    public void delete(Long id) {
-        tasks.delete(getEntity(id));
+    public void delete(Long id, Long ownerId) {
+        tasks.delete(getEntity(id, ownerId));
     }
 
-    private Task getEntity(Long id) {
-        return tasks.findById(id).orElseThrow(() -> new NotFoundException("Task", id));
+    private Task getEntity(Long id, Long ownerId) {
+        return tasks.findByIdAndProjectOwnerId(id, ownerId).orElseThrow(() -> new NotFoundException("Task", id));
     }
 
     private static void apply(Task task, TaskRequest request) {

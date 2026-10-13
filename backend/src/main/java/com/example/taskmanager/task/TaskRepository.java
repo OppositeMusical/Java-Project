@@ -1,6 +1,7 @@
 package com.example.taskmanager.task;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -11,11 +12,17 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @Query("""
             select t from Task t join fetch t.project p
-            where (:projectId is null or p.id = :projectId)
+            where p.owner.id = :ownerId
+              and (:projectId is null or p.id = :projectId)
               and (:status is null or t.status = :status)
             order by t.createdAt desc, t.id desc
             """)
-    List<Task> search(@Param("projectId") Long projectId, @Param("status") TaskStatus status);
+    List<Task> search(
+            @Param("ownerId") Long ownerId,
+            @Param("projectId") Long projectId,
+            @Param("status") TaskStatus status);
+
+    Optional<Task> findByIdAndProjectOwnerId(Long id, Long ownerId);
 
     long countByProjectId(Long projectId);
 

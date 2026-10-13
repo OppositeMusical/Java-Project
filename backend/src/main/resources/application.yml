@@ -20,6 +20,14 @@ spring:
 
 server:
   port: 8080
+  servlet:
+    session:
+      timeout: 8h
+      cookie:
+        http-only: true
+        same-site: lax
+        # Set SESSION_COOKIE_SECURE=true when serving over HTTPS.
+        secure: ${SESSION_COOKIE_SECURE:false}
 
 management:
   endpoints:
