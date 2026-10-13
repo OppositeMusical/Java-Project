@@ -4,11 +4,16 @@ import java.time.OffsetDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+
+import com.example.taskmanager.auth.AppUser;
 
 @Entity
 @Table(name = "projects")
@@ -24,13 +29,18 @@ public class Project {
     @Column(length = 1000)
     private String description;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "owner_id", nullable = false, updatable = false)
+    private AppUser owner;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
     protected Project() {
     }
 
-    public Project(String name, String description) {
+    public Project(AppUser owner, String name, String description) {
+        this.owner = owner;
         this.name = name;
         this.description = description;
     }
@@ -58,6 +68,10 @@ public class Project {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public AppUser getOwner() {
+        return owner;
     }
 
     public OffsetDateTime getCreatedAt() {

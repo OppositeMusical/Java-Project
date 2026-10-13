@@ -20,6 +20,14 @@ spring:
 
 server:
   port: 8080
+  servlet:
+    session:
+      timeout: 8h
+      cookie:
+        http-only: true
+        same-site: lax
+        # Set SESSION_COOKIE_SECURE=true when serving over HTTPS.
+        secure: ${SESSION_COOKIE_SECURE:false}
 
 management:
   endpoints:
@@ -30,3 +38,10 @@ management:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  security:
+    login-attempts:
+      # After this many wrong passwords for one email from one IP, that pair must wait out the window.
+      max-per-account-and-ip: 5
+      # After this many failures from one IP (any emails), the IP must wait out the window.
+      max-per-ip: 20
+      window: 15m

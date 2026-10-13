@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import type { Project } from '../api/types';
+import type { Project, User } from '../api/types';
 
 interface Props {
   projects: Project[];
@@ -7,9 +7,19 @@ interface Props {
   onSelect: (id: number | null) => void;
   onCreate: (name: string) => Promise<void>;
   onDelete: (project: Project) => void;
+  user: User;
+  onSignOut: () => void;
 }
 
-export default function ProjectSidebar({ projects, selectedId, onSelect, onCreate, onDelete }: Props) {
+export default function ProjectSidebar({
+  projects,
+  selectedId,
+  onSelect,
+  onCreate,
+  onDelete,
+  user,
+  onSignOut,
+}: Props) {
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -72,6 +82,16 @@ export default function ProjectSidebar({ projects, selectedId, onSelect, onCreat
           Add
         </button>
       </form>
+
+      <div className="account">
+        <div>
+          <strong>{user.displayName}</strong>
+          <span className="muted">{user.email}</span>
+        </div>
+        <button className="secondary" onClick={onSignOut}>
+          Sign out
+        </button>
+      </div>
     </aside>
   );
 }

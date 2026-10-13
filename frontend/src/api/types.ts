@@ -45,3 +45,18 @@ export interface TaskRequest {
   dueDate?: string | null;
   projectId: number;
 }
+
+export interface User {
+  id: number;
+  email: string;
+  displayName: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface RegisterRequest extends LoginRequest {
+  displayName: string;
+}
