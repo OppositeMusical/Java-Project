@@ -32,7 +32,12 @@ export default function AuthPage() {
         await signIn({ email: email.trim(), password });
       }
     } catch (error) {
-      if (error instanceof ApiError) {
+      if (error instanceof ApiError && error.status === 429) {
+        const minutes = Math.ceil((error.retryAfterSeconds ?? 60) / 60);
+        setErrors({
+          form: `Too many failed sign-in attempts. Try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`,
+        });
+      } else if (error instanceof ApiError) {
         setErrors({ ...error.fieldErrors, form: error.message });
       } else {
         setErrors({ form: 'Could not reach the server. Is the backend running?' });

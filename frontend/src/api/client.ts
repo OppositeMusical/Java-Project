@@ -15,11 +15,14 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 export class ApiError extends Error {
   readonly status: number;
   readonly fieldErrors: Record<string, string>;
+  /** Set on 429 responses: how long the client must wait before retrying. */
+  readonly retryAfterSeconds?: number;
 
-  constructor(status: number, message: string, fieldErrors: Record<string, string> = {}) {
+  constructor(status: number, message: string, fieldErrors: Record<string, string> = {}, retryAfterSeconds?: number) {
     super(message);
     this.status = status;
     this.fieldErrors = fieldErrors;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
@@ -69,9 +72,9 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     onUnauthorized();
   }
   if (!response.ok) {
-    // Spring returns RFC 9457 problem details: { detail, errors? }
+    // Spring returns RFC 9457 problem details: { detail, errors?, retryAfterSeconds? }
     const problem = await response.json().catch(() => ({}));
-    throw new ApiError(response.status, problem.detail ?? response.statusText, problem.errors);
+    throw new ApiError(response.status, problem.detail ?? response.statusText, problem.errors, problem.retryAfterSeconds);
   }
   return response.status === 204 ? (undefined as T) : response.json();
 }
