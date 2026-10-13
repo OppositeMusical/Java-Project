@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/taskmanager}
+    username: ${DB_USERNAME:taskmanager}
+    password: ${DB_PASSWORD:taskmanager}
+  h2:
+    console:
+      enabled: false
