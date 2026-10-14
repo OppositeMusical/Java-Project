@@ -11,8 +11,8 @@ public final class AuthDtos {
 
     public record RegisterRequest(
             @NotBlank @Email @Size(max = 255) String email,
-            // BCrypt only uses the first 72 bytes of a password.
-            @NotBlank @Size(min = 8, max = 72) String password,
+            // BCrypt rejects passwords over 72 bytes, so limit bytes, not characters.
+            @NotBlank @Size(min = 8) @MaxUtf8Bytes(72) String password,
             @NotBlank @Size(max = 100) String displayName) {
     }
 

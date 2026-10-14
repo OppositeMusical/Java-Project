@@ -104,6 +104,31 @@ class AuthApiTest {
     }
 
     @Test
+    void rejectsPasswordsOverBcryptsByteLimit() throws Exception {
+        // 60 characters but 120 bytes in UTF-8; BCrypt only accepts 72 bytes.
+        String tooLong = "é".repeat(60);
+        mvc.perform(post("/api/auth/register").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email": "long@example.com", "password": "%s", "displayName": "Long"}
+                                """.formatted(tooLong)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.password").exists());
+
+        // Exactly 72 bytes (36 two-byte characters) is still allowed.
+        mvc.perform(post("/api/auth/register").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email": "edge@example.com", "password": "%s", "displayName": "Edge"}
+                                """.formatted("é".repeat(36))))
+                .andExpect(status().isCreated());
+
+        // Signing in with an over-long password is just a wrong password, not a server error.
+        mvc.perform(login("demo@example.com", tooLong).with(fromIp("192.0.2.30")))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void usersCannotSeeOrTouchEachOthersData() throws Exception {
         MockHttpSession demo = signIn("demo@example.com", "password123");
         mvc.perform(get("/api/projects").session(demo)).andExpect(jsonPath("$", hasSize(2)));
